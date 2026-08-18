@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>どうぶつクイズ</title>
+<style>
+  :root {
+    --pink: #ff8fab;
+    --yellow: #ffd23f;
+    --blue: #4ecdc4;
+    --green: #6bcf63;
+    --purple: #a06cd5;
+    --bg: #fff6e9;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: "Hiragino Maru Gothic ProN", "Rounded Mplus 1c", "Yu Gothic", sans-serif;
+    background: linear-gradient(160deg, var(--bg), #ffe3ec);
+    overflow-x: hidden;
+  }
+  #app {
+    max-width: 640px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+  .screen { width: 100%; display: none; flex-direction: column; align-items: center; }
+  .screen.active { display: flex; }
+
+  /* ---- Title screen ---- */
+  #title h1 {
+    font-size: clamp(2rem, 8vw, 3rem);
+    color: #ff6b8b;
+    text-shadow: 3px 3px 0 #fff, 5px 5px 0 rgba(0,0,0,0.08);
+    text-align: center;
+    margin: 40px 0 8px;
+  }
+  .title-emojis { font-size: clamp(2.5rem, 10vw, 3.5rem); margin-bottom: 20px; letter-spacing: 8px; }
+  #startBtn {
+    font-size: 1.6rem;
+    padding: 18px 48px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(180deg, #ffb84d, #ff8f3d);
+    color: #fff;
+    font-weight: bold;
+    box-shadow: 0 6px 0 #d96e1f, 0 10px 20px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  #startBtn:active { transform: translateY(6px); box-shadow: 0 0 0 #d96e1f; }
+  .sub { color: #a05a3f; font-size: 1.1rem; margin-top: 10px; text-align: center; }
+
+  /* ---- Loading screen ---- */
+  #loading .spinner {
+    width: 64px;
+    height: 64px;
+    border: 8px solid #ffe0ea;
+    border-top-color: #ff8f3d;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin: 60px 0 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { font-size: 1.2rem; color: #a05a3f; font-weight: bold; }
+
+  /* ---- Quiz screen ---- */
+  .top-bar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    margin-bottom: 4px;
+  }
+  .progress-wrap {
+    flex: 1;
+    height: 22px;
+    background: #fff;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+    margin-right: 12px;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--green), var(--blue));
+    border-radius: 20px;
+    transition: width 0.4s ease;
+  }
+  .score-badge {
+    background: #fff;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-weight: bold;
+    color: #ff6b8b;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    white-space: nowrap;
+    font-size: 1.1rem;
+  }
+  .question-card {
+    background: #fff;
+    border-radius: 24px;
+    width: 100%;
+    padding: 24px 16px 32px;
+    margin-top: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    text-align: center;
+    position: relative;
+  }
+  .q-num { color: #bbb; font-weight: bold; font-size: 0.95rem; }
+  .q-text {
+    font-size: clamp(1.5rem, 6vw, 2.1rem);
+    font-weight: bold;
+    color: #444;
+    margin: 8px 0 24px;
+  }
+  .q-text .highlight { color: #ff6b8b; }
+  .choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .choice-btn {
+    border: 4px solid #ffe0ea;
+    background: #fffaf5;
+    border-radius: 20px;
+    padding: 14px 8px;
+    cursor: pointer;
+    transition: transform 0.12s, background 0.2s, border-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .choice-btn:active { transform: scale(0.96); }
+  .choice-media {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f3f3f3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .choice-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .choice-emoji { font-size: clamp(3rem, 14vw, 4.5rem); }
+  .choice-name { font-size: 1.1rem; font-weight: bold; color: #666; }
+  .choice-btn.correct { background: #e3fbe0; border-color: var(--green); animation: pop 0.3s; }
+  .choice-btn.wrong { background: #ffe3e3; border-color: #ff6b6b; animation: shake 0.35s; }
+  .choice-btn.disabled { pointer-events: none; opacity: 0.55; }
+  .choice-btn.disabled.correct, .choice-btn.disabled.wrong { opacity: 1; }
+
+  @keyframes pop { 0% { transform: scale(1);} 50% { transform: scale(1.08);} 100% { transform: scale(1);} }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+
+  .feedback {
+    margin-top: 18px;
+    font-size: 1.4rem;
+    font-weight: bold;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .feedback.correct { color: #3fae3f; }
+  .feedback.wrong { color: #ff5c5c; }
+
+  /* ---- Result screen ---- */
+  #result h2 {
+    font-size: clamp(1.8rem, 7vw, 2.4rem);
+    color: #ff6b8b;
+    margin-top: 30px;
+  }
+  .result-emoji { font-size: 5rem; margin: 10px 0; }
+  .result-score {
+    font-size: clamp(2rem, 8vw, 3rem);
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 6px;
+  }
+  .stars { font-size: 2.2rem; letter-spacing: 6px; margin-bottom: 20px; }
+  .result-msg { font-size: 1.2rem; color: #a05a3f; margin-bottom: 26px; text-align: center; }
+  #retryBtn {
+    font-size: 1.4rem;
+    padding: 16px 44px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(180deg, #6bd6cf, #33b6ac);
+    color: #fff;
+    font-weight: bold;
+    box-shadow: 0 6px 0 #248f87, 0 10px 20px rgba(0,0,0,0.15);
+    cursor: pointer;
+    margin-bottom: 60px;
+  }
+  #retryBtn:active { transform: translateY(6px); box-shadow: 0 0 0 #248f87; }
+
+  .confetti {
+    position: fixed;
+    top: -20px;
+    font-size: 1.6rem;
+    animation: fall linear forwards;
+    pointer-events: none;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(360deg); opacity: 0.2; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- タイトル画面 -->
+  <div id="title" class="screen active">
+    <h1>どうぶつクイズ</h1>
+    <div class="title-emojis">🦁🐼🐘🦒🐧</div>
+    <button id="startBtn">スタート！</button>
+    <p class="sub">ぜんぶで 10もん<br>どうぶつを あてよう！</p>
+  </div>
+
+  <!-- よみこみ画面 -->
+  <div id="loading" class="screen">
+    <div class="spinner"></div>
+    <p>しゃしんを よみこみちゅう...</p>
+  </div>
+
+  <!-- クイズ画面 -->
+  <div id="quiz" class="screen">
+    <div class="top-bar">
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="score-badge">⭐ <span id="scoreText">0</span></div>
+    </div>
+    <div class="question-card">
+      <div class="q-num"><span id="qIndex">1</span> / 10 もんめ</div>
+      <div class="q-text"><span class="highlight" id="qAnimalName"></span>は どっち？</div>
+      <div class="choices" id="choices"></div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  </div>
+
+  <!-- 結果画面 -->
+  <div id="result" class="screen">
+    <h2>クリア！</h2>
+    <div class="result-emoji" id="resultEmoji">🎉</div>
+    <div class="result-score"><span id="finalScore">0</span> / 10 もん せいかい</div>
+    <div class="stars" id="stars"></div>
+    <div class="result-msg" id="resultMsg"></div>
+    <button id="retryBtn">もういちど あそぶ</button>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // 動物データ（表示名・検索用のWikipediaタイトル・絵文字フォールバック）
+  const ANIMALS = [
+    { name: "ライオン", query: "ライオン", emoji: "🦁" },
+    { name: "ゾウ", query: "アフリカゾウ", emoji: "🐘" },
+    { name: "パンダ", query: "ジャイアントパンダ", emoji: "🐼" },
+    { name: "キリン", query: "キリン", emoji: "🦒" },
+    { name: "トラ", query: "トラ", emoji: "🐯" },
+    { name: "サル", query: "ニホンザル", emoji: "🐵" },
+    { name: "イヌ", query: "イヌ", emoji: "🐶" },
+    { name: "ネコ", query: "ネコ", emoji: "🐱" },
+    { name: "ウサギ", query: "ウサギ", emoji: "🐰" },
+    { name: "クマ", query: "ヒグマ", emoji: "🐻" },
+    { name: "ペンギン", query: "ペンギン", emoji: "🐧" },
+    { name: "フクロウ", query: "フクロウ", emoji: "🦉" },
+    { name: "カメ", query: "ウミガメ", emoji: "🐢" },
+    { name: "サメ", query: "サメ", emoji: "🦈" },
+    { name: "イルカ", query: "マイルカ", emoji: "🐬" },
+    { name: "タコ", query: "タコ", emoji: "🐙" },
+    { name: "チョウ", query: "チョウ", emoji: "🦋" },
+    { name: "ミツバチ", query: "セイヨウミツバチ", emoji: "🐝" },
+    { name: "ウマ", query: "ウマ", emoji: "🐴" },
+    { name: "ブタ", query: "ブタ", emoji: "🐷" },
+    { name: "ウシ", query: "ウシ", emoji: "🐮" },
+    { name: "ヒツジ", query: "ヒツジ", emoji: "🐑" },
+    { name: "ニワトリ", query: "ニワトリ", emoji: "🐔" },
+    { name: "アヒル", query: "アヒル", emoji: "🦆" },
+    { name: "カエル", query: "カエル", emoji: "🐸" },
+    { name: "ヘビ", query: "ヘビ", emoji: "🐍" },
+    { name: "コアラ", query: "コアラ", emoji: "🐨" },
+    { name: "カバ", query: "カバ", emoji: "🦛" },
+    { name: "サイ", query: "サイ", emoji: "🦏" },
+    { name: "ラクダ", query: "ヒトコブラクダ", emoji: "🐫" },
+    { name: "シマウマ", query: "サバンナシマウマ", emoji: "🦓" },
+    { name: "オオカミ", query: "タイリクオオカミ", emoji: "🐺" },
+    { name: "キツネ", query: "アカギツネ", emoji: "🦊" },
+    { name: "リス", query: "リス", emoji: "🐿️" },
+    { name: "ハリネズミ", query: "ハリネズミ", emoji: "🦔" },
+    { name: "コウモリ", query: "コウモリ", emoji: "🦇" },
+    { name: "ワシ", query: "イヌワシ", emoji: "🦅" },
+    { name: "クジャク", query: "クジャク", emoji: "🦚" },
+    { name: "フラミンゴ", query: "フラミンゴ", emoji: "🦩" },
+    { name: "カニ", query: "カニ", emoji: "🦀" },
+    { name: "エビ", query: "エビ", emoji: "🦐" },
+    { name: "カタツムリ", query: "カタツムリ", emoji: "🐌" },
+    { name: "テントウムシ", query: "テントウムシ", emoji: "🐞" }
+  ];
+
+  const TOTAL_QUESTIONS = 10;
+  const imageCache = {};
+
+  const titleScreen = document.getElementById("title");
+  const loadingScreen = document.getElementById("loading");
+  const quizScreen = document.getElementById("quiz");
+  const resultScreen = document.getElementById("result");
+  const startBtn = document.getElementById("startBtn");
+  const retryBtn = document.getElementById("retryBtn");
+  const progressBar = document.getElementById("progressBar");
+  const scoreText = document.getElementById("scoreText");
+  const qIndexEl = document.getElementById("qIndex");
+  const qAnimalName = document.getElementById("qAnimalName");
+  const choicesEl = document.getElementById("choices");
+  const feedbackEl = document.getElementById("feedback");
+  const finalScoreEl = document.getElementById("finalScore");
+  const starsEl = document.getElementById("stars");
+  const resultMsgEl = document.getElementById("resultMsg");
+  const resultEmojiEl = document.getElementById("resultEmoji");
+
+  let questions = [];
+  let currentIndex = 0;
+  let score = 0;
+  let locked = false;
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildQuestions() {
+    const pool = shuffle(ANIMALS).slice(0, TOTAL_QUESTIONS);
+    return pool.map((correct) => {
+      const others = ANIMALS.filter((a) => a.name !== correct.name);
+      const wrong = shuffle(others)[0];
+      const options = shuffle([correct, wrong]);
+      return { correct, options };
+    });
+  }
+
+  // Wikipedia(ja)から実写真のサムネイルURLを取得。取得できない場合はnull。
+  async function fetchImageUrl(query) {
+    if (imageCache[query] !== undefined) return imageCache[query];
+    try {
+      const url = "https://ja.wikipedia.org/w/api.php?origin=*&action=query&format=json"
+        + "&prop=pageimages&piprop=thumbnail&pithumbsize=500&redirects=1"
+        + "&titles=" + encodeURIComponent(query);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!res.ok) throw new Error("network");
+      const data = await res.json();
+      const pages = data.query && data.query.pages;
+      let thumb = null;
+      if (pages) {
+        const page = Object.values(pages)[0];
+        if (page && page.thumbnail && page.thumbnail.source) {
+          thumb = page.thumbnail.source;
+        }
+      }
+      imageCache[query] = thumb;
+      return thumb;
+    } catch (e) {
+      imageCache[query] = null;
+      return null;
+    }
+  }
+
+  function showScreen(el) {
+    [titleScreen, loadingScreen, quizScreen, resultScreen].forEach((s) => s.classList.remove("active"));
+    el.classList.add("active");
+  }
+
+  async function startGame() {
+    showScreen(loadingScreen);
+    questions = buildQuestions();
+    currentIndex = 0;
+    score = 0;
+    scoreText.textContent = "0";
+
+    // 必要な動物の画像を先読み（並列取得、失敗しても続行）
+    const neededQueries = new Set();
+    questions.forEach((q) => q.options.forEach((o) => neededQueries.add(o.query)));
+    await Promise.all(Array.from(neededQueries).map((q) => fetchImageUrl(q)));
+
+    showScreen(quizScreen);
+    renderQuestion();
+  }
+
+  function renderQuestion() {
+    locked = false;
+    feedbackEl.textContent = "";
+    feedbackEl.className = "feedback";
+    const q = questions[currentIndex];
+    qIndexEl.textContent = currentIndex + 1;
+    qAnimalName.textContent = q.correct.name;
+    progressBar.style.width = ((currentIndex) / TOTAL_QUESTIONS * 100) + "%";
+
+    choicesEl.innerHTML = "";
+    q.options.forEach((opt) => {
+      const btn = document.createElement("button");
+      btn.className = "choice-btn";
+
+      const mediaWrap = document.createElement("div");
+      mediaWrap.className = "choice-media";
+      const cachedUrl = imageCache[opt.query];
+      if (cachedUrl) {
+        const img = document.createElement("img");
+        img.src = cachedUrl;
+        img.alt = opt.name;
+        img.onerror = () => {
+          mediaWrap.innerHTML = `<span class="choice-emoji">${opt.emoji}</span>`;
+        };
+        mediaWrap.appendChild(img);
+      } else {
+        mediaWrap.innerHTML = `<span class="choice-emoji">${opt.emoji}</span>`;
+      }
+
+      const nameEl = document.createElement("span");
+      nameEl.className = "choice-name";
+      nameEl.textContent = opt.name;
+
+      btn.appendChild(mediaWrap);
+      btn.appendChild(nameEl);
+      btn.addEventListener("click", () => onChoose(btn, opt, q.correct));
+      choicesEl.appendChild(btn);
+    });
+  }
+
+  function onChoose(btn, chosen, correct) {
+    if (locked) return;
+    locked = true;
+    const isCorrect = chosen.name === correct.name;
+    const allButtons = choicesEl.querySelectorAll(".choice-btn");
+    allButtons.forEach((b) => b.classList.add("disabled"));
+
+    if (isCorrect) {
+      btn.classList.add("correct");
+      score++;
+      scoreText.textContent = score;
+      feedbackEl.textContent = "🎉 せいかい！";
+      feedbackEl.classList.add("correct");
+    } else {
+      btn.classList.add("wrong");
+      allButtons.forEach((b) => {
+        if (b.querySelector(".choice-name").textContent === correct.name) {
+          b.classList.add("correct");
+        }
+      });
+      feedbackEl.textContent = `😅 ざんねん！ ${correct.name}だよ`;
+      feedbackEl.classList.add("wrong");
+    }
+
+    progressBar.style.width = ((currentIndex + 1) / TOTAL_QUESTIONS * 100) + "%";
+
+    setTimeout(() => {
+      currentIndex++;
+      if (currentIndex >= TOTAL_QUESTIONS) {
+        showResult();
+      } else {
+        renderQuestion();
+      }
+    }, 1200);
+  }
+
+  function showResult() {
+    showScreen(resultScreen);
+    finalScoreEl.textContent = score;
+    const starCount = score >= 9 ? 3 : score >= 6 ? 2 : score >= 3 ? 1 : 0;
+    starsEl.textContent = "⭐".repeat(starCount) + "☆".repeat(3 - starCount);
+
+    if (score === TOTAL_QUESTIONS) {
+      resultEmojiEl.textContent = "🏆";
+      resultMsgEl.textContent = "パーフェクト！ すごい どうぶつ はかせだね！";
+      launchConfetti();
+    } else if (score >= 7) {
+      resultEmojiEl.textContent = "🎉";
+      resultMsgEl.textContent = "よくできました！ もう少しで はかせだよ！";
+    } else if (score >= 4) {
+      resultEmojiEl.textContent = "😊";
+      resultMsgEl.textContent = "がんばったね！ もう一回 ちょうせんしよう！";
+    } else {
+      resultEmojiEl.textContent = "🐣";
+      resultMsgEl.textContent = "どんどん おぼえていこう！";
+    }
+  }
+
+  function launchConfetti() {
+    const emojis = ["🎉", "⭐", "🎊", "🌟", "✨"];
+    for (let i = 0; i < 24; i++) {
+      const el = document.createElement("div");
+      el.className = "confetti";
+      el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      el.style.left = Math.random() * 100 + "vw";
+      el.style.animationDuration = 2 + Math.random() * 1.5 + "s";
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
+  }
+
+  startBtn.addEventListener("click", startGame);
+  retryBtn.addEventListener("click", startGame);
+})();
+</script>
+</body>
+</html>
