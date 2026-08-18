@@ -236,7 +236,7 @@
     <h1>どうぶつクイズ</h1>
     <div class="title-emojis">🦁🐼🐘🦒🐧</div>
     <button id="startBtn">スタート！</button>
-    <p class="sub">ぜんぶで 10もん<br>どうぶつを あてよう！</p>
+    <p class="sub">ぜんぶで <span id="totalQTitle">10</span>もん<br>どうぶつを あてよう！</p>
   </div>
 
   <!-- よみこみ画面 -->
@@ -252,7 +252,7 @@
       <div class="score-badge">⭐ <span id="scoreText">0</span></div>
     </div>
     <div class="question-card">
-      <div class="q-num"><span id="qIndex">1</span> / 10 もんめ</div>
+      <div class="q-num"><span id="qIndex">1</span> / <span id="totalQ">10</span> もんめ</div>
       <div class="q-text"><span class="highlight" id="qAnimalName"></span>は どっち？</div>
       <div class="choices" id="choices"></div>
       <div class="feedback" id="feedback"></div>
@@ -263,7 +263,7 @@
   <div id="result" class="screen">
     <h2>クリア！</h2>
     <div class="result-emoji" id="resultEmoji">🎉</div>
-    <div class="result-score"><span id="finalScore">0</span> / 10 もん せいかい</div>
+    <div class="result-score"><span id="finalScore">0</span> / <span id="totalQResult">10</span> もん せいかい</div>
     <div class="stars" id="stars"></div>
     <div class="result-msg" id="resultMsg"></div>
     <button id="retryBtn">もういちど あそぶ</button>
@@ -275,54 +275,102 @@
 (function () {
   "use strict";
 
-  // 動物データ（表示名・検索用のWikipediaタイトル・絵文字フォールバック）
+  // 動物データ（表示名・検索用のWikipediaタイトル・絵文字フォールバック・なかまカテゴリ）
+  // カテゴリが同じどうし出題されるので、似ている動物を見分ける「むずかしい」問題になる
   const ANIMALS = [
-    { name: "ライオン", query: "ライオン", emoji: "🦁" },
-    { name: "ゾウ", query: "アフリカゾウ", emoji: "🐘" },
-    { name: "パンダ", query: "ジャイアントパンダ", emoji: "🐼" },
-    { name: "キリン", query: "キリン", emoji: "🦒" },
-    { name: "トラ", query: "トラ", emoji: "🐯" },
-    { name: "サル", query: "ニホンザル", emoji: "🐵" },
-    { name: "イヌ", query: "イヌ", emoji: "🐶" },
-    { name: "ネコ", query: "ネコ", emoji: "🐱" },
-    { name: "ウサギ", query: "ウサギ", emoji: "🐰" },
-    { name: "クマ", query: "ヒグマ", emoji: "🐻" },
-    { name: "ペンギン", query: "ペンギン", emoji: "🐧" },
-    { name: "フクロウ", query: "フクロウ", emoji: "🦉" },
-    { name: "カメ", query: "ウミガメ", emoji: "🐢" },
-    { name: "サメ", query: "サメ", emoji: "🦈" },
-    { name: "イルカ", query: "マイルカ", emoji: "🐬" },
-    { name: "タコ", query: "タコ", emoji: "🐙" },
-    { name: "チョウ", query: "チョウ", emoji: "🦋" },
-    { name: "ミツバチ", query: "セイヨウミツバチ", emoji: "🐝" },
-    { name: "ウマ", query: "ウマ", emoji: "🐴" },
-    { name: "ブタ", query: "ブタ", emoji: "🐷" },
-    { name: "ウシ", query: "ウシ", emoji: "🐮" },
-    { name: "ヒツジ", query: "ヒツジ", emoji: "🐑" },
-    { name: "ニワトリ", query: "ニワトリ", emoji: "🐔" },
-    { name: "アヒル", query: "アヒル", emoji: "🦆" },
-    { name: "カエル", query: "カエル", emoji: "🐸" },
-    { name: "ヘビ", query: "ヘビ", emoji: "🐍" },
-    { name: "コアラ", query: "コアラ", emoji: "🐨" },
-    { name: "カバ", query: "カバ", emoji: "🦛" },
-    { name: "サイ", query: "サイ", emoji: "🦏" },
-    { name: "ラクダ", query: "ヒトコブラクダ", emoji: "🐫" },
-    { name: "シマウマ", query: "サバンナシマウマ", emoji: "🦓" },
-    { name: "オオカミ", query: "タイリクオオカミ", emoji: "🐺" },
-    { name: "キツネ", query: "アカギツネ", emoji: "🦊" },
-    { name: "リス", query: "リス", emoji: "🐿️" },
-    { name: "ハリネズミ", query: "ハリネズミ", emoji: "🦔" },
-    { name: "コウモリ", query: "コウモリ", emoji: "🦇" },
-    { name: "ワシ", query: "イヌワシ", emoji: "🦅" },
-    { name: "クジャク", query: "クジャク", emoji: "🦚" },
-    { name: "フラミンゴ", query: "フラミンゴ", emoji: "🦩" },
-    { name: "カニ", query: "カニ", emoji: "🦀" },
-    { name: "エビ", query: "エビ", emoji: "🦐" },
-    { name: "カタツムリ", query: "カタツムリ", emoji: "🐌" },
-    { name: "テントウムシ", query: "テントウムシ", emoji: "🐞" }
+    // ほ乳類
+    { name: "ライオン", query: "ライオン", emoji: "🦁", cat: "mammal" },
+    { name: "トラ", query: "トラ", emoji: "🐯", cat: "mammal" },
+    { name: "ヒョウ", query: "ヒョウ", emoji: "🐆", cat: "mammal" },
+    { name: "チーター", query: "チーター", emoji: "🐆", cat: "mammal" },
+    { name: "ゾウ", query: "アフリカゾウ", emoji: "🐘", cat: "mammal" },
+    { name: "サイ", query: "サイ", emoji: "🦏", cat: "mammal" },
+    { name: "カバ", query: "カバ", emoji: "🦛", cat: "mammal" },
+    { name: "キリン", query: "キリン", emoji: "🦒", cat: "mammal" },
+    { name: "シマウマ", query: "サバンナシマウマ", emoji: "🦓", cat: "mammal" },
+    { name: "ウマ", query: "ウマ", emoji: "🐴", cat: "mammal" },
+    { name: "ロバ", query: "ロバ", emoji: "🫏", cat: "mammal" },
+    { name: "ラクダ", query: "ヒトコブラクダ", emoji: "🐫", cat: "mammal" },
+    { name: "パンダ", query: "ジャイアントパンダ", emoji: "🐼", cat: "mammal" },
+    { name: "レッサーパンダ", query: "レッサーパンダ", emoji: "🐼", cat: "mammal" },
+    { name: "コアラ", query: "コアラ", emoji: "🐨", cat: "mammal" },
+    { name: "クマ", query: "ヒグマ", emoji: "🐻", cat: "mammal" },
+    { name: "オオカミ", query: "タイリクオオカミ", emoji: "🐺", cat: "mammal" },
+    { name: "キツネ", query: "アカギツネ", emoji: "🦊", cat: "mammal" },
+    { name: "イヌ", query: "イヌ", emoji: "🐶", cat: "mammal" },
+    { name: "ネコ", query: "ネコ", emoji: "🐱", cat: "mammal" },
+    { name: "ウサギ", query: "ウサギ", emoji: "🐰", cat: "mammal" },
+    { name: "リス", query: "リス", emoji: "🐿️", cat: "mammal" },
+    { name: "ハリネズミ", query: "ハリネズミ", emoji: "🦔", cat: "mammal" },
+    { name: "コウモリ", query: "コウモリ", emoji: "🦇", cat: "mammal" },
+    { name: "サル", query: "ニホンザル", emoji: "🐵", cat: "mammal" },
+    { name: "ゴリラ", query: "ゴリラ", emoji: "🦍", cat: "mammal" },
+    { name: "チンパンジー", query: "チンパンジー", emoji: "🦧", cat: "mammal" },
+    { name: "オランウータン", query: "オランウータン", emoji: "🦧", cat: "mammal" },
+    { name: "カンガルー", query: "カンガルー", emoji: "🦘", cat: "mammal" },
+    { name: "ウシ", query: "ウシ", emoji: "🐮", cat: "mammal" },
+    { name: "ブタ", query: "ブタ", emoji: "🐷", cat: "mammal" },
+    { name: "ヒツジ", query: "ヒツジ", emoji: "🐑", cat: "mammal" },
+    { name: "ヤギ", query: "ヤギ", emoji: "🐐", cat: "mammal" },
+    { name: "アザラシ", query: "アザラシ", emoji: "🦭", cat: "mammal" },
+    { name: "セイウチ", query: "セイウチ", emoji: "🦭", cat: "mammal" },
+    { name: "ラッコ", query: "ラッコ", emoji: "🦦", cat: "mammal" },
+    { name: "イルカ", query: "マイルカ", emoji: "🐬", cat: "mammal" },
+    { name: "クジラ", query: "クジラ", emoji: "🐳", cat: "mammal" },
+    // 鳥類
+    { name: "ペンギン", query: "ペンギン", emoji: "🐧", cat: "bird" },
+    { name: "フクロウ", query: "フクロウ", emoji: "🦉", cat: "bird" },
+    { name: "ワシ", query: "イヌワシ", emoji: "🦅", cat: "bird" },
+    { name: "タカ", query: "タカ", emoji: "🦅", cat: "bird" },
+    { name: "クジャク", query: "クジャク", emoji: "🦚", cat: "bird" },
+    { name: "フラミンゴ", query: "フラミンゴ", emoji: "🦩", cat: "bird" },
+    { name: "ハクチョウ", query: "ハクチョウ", emoji: "🦢", cat: "bird" },
+    { name: "ツル", query: "タンチョウ", emoji: "🕊️", cat: "bird" },
+    { name: "ニワトリ", query: "ニワトリ", emoji: "🐔", cat: "bird" },
+    { name: "アヒル", query: "アヒル", emoji: "🦆", cat: "bird" },
+    { name: "カラス", query: "カラス", emoji: "🐦‍⬛", cat: "bird" },
+    { name: "スズメ", query: "スズメ", emoji: "🐦", cat: "bird" },
+    { name: "ハト", query: "ハト", emoji: "🕊️", cat: "bird" },
+    { name: "インコ", query: "インコ", emoji: "🦜", cat: "bird" },
+    { name: "オウム", query: "オウム", emoji: "🦜", cat: "bird" },
+    { name: "ダチョウ", query: "ダチョウ", emoji: "🦤", cat: "bird" },
+    // 魚・海の生き物
+    { name: "サメ", query: "サメ", emoji: "🦈", cat: "sea" },
+    { name: "タコ", query: "タコ", emoji: "🐙", cat: "sea" },
+    { name: "イカ", query: "イカ", emoji: "🦑", cat: "sea" },
+    { name: "カニ", query: "カニ", emoji: "🦀", cat: "sea" },
+    { name: "エビ", query: "エビ", emoji: "🦐", cat: "sea" },
+    { name: "クラゲ", query: "クラゲ", emoji: "🪼", cat: "sea" },
+    { name: "マグロ", query: "マグロ", emoji: "🐟", cat: "sea" },
+    { name: "フグ", query: "フグ", emoji: "🐡", cat: "sea" },
+    { name: "クマノミ", query: "クマノミ", emoji: "🐠", cat: "sea" },
+    { name: "タツノオトシゴ", query: "タツノオトシゴ", emoji: "🐴", cat: "sea" },
+    { name: "ウナギ", query: "ウナギ", emoji: "🐍", cat: "sea" },
+    { name: "カメ", query: "ウミガメ", emoji: "🐢", cat: "reptile" },
+    // は虫類
+    { name: "ワニ", query: "ワニ", emoji: "🐊", cat: "reptile" },
+    { name: "ヘビ", query: "ヘビ", emoji: "🐍", cat: "reptile" },
+    { name: "トカゲ", query: "トカゲ", emoji: "🦎", cat: "reptile" },
+    { name: "イグアナ", query: "イグアナ", emoji: "🦎", cat: "reptile" },
+    { name: "カメレオン", query: "カメレオン", emoji: "🦎", cat: "reptile" },
+    // 両生類
+    { name: "カエル", query: "カエル", emoji: "🐸", cat: "amphibian" },
+    { name: "イモリ", query: "イモリ", emoji: "🦎", cat: "amphibian" },
+    { name: "サンショウウオ", query: "サンショウウオ", emoji: "🦎", cat: "amphibian" },
+    // 昆虫など
+    { name: "チョウ", query: "チョウ", emoji: "🦋", cat: "insect" },
+    { name: "ミツバチ", query: "セイヨウミツバチ", emoji: "🐝", cat: "insect" },
+    { name: "テントウムシ", query: "テントウムシ", emoji: "🐞", cat: "insect" },
+    { name: "アリ", query: "アリ", emoji: "🐜", cat: "insect" },
+    { name: "トンボ", query: "トンボ", emoji: "🐉", cat: "insect" },
+    { name: "セミ", query: "セミ", emoji: "🦗", cat: "insect" },
+    { name: "カブトムシ", query: "カブトムシ", emoji: "🪲", cat: "insect" },
+    { name: "クワガタ", query: "クワガタムシ", emoji: "🪲", cat: "insect" },
+    { name: "バッタ", query: "バッタ", emoji: "🦗", cat: "insect" },
+    { name: "カタツムリ", query: "カタツムリ", emoji: "🐌", cat: "insect" }
   ];
 
-  const TOTAL_QUESTIONS = 10;
+  const TOTAL_QUESTIONS = 15;
   const imageCache = {};
 
   const titleScreen = document.getElementById("title");
@@ -342,6 +390,9 @@
   const resultMsgEl = document.getElementById("resultMsg");
   const resultEmojiEl = document.getElementById("resultEmoji");
 
+  [document.getElementById("totalQTitle"), document.getElementById("totalQ"), document.getElementById("totalQResult")]
+    .forEach((el) => { if (el) el.textContent = TOTAL_QUESTIONS; });
+
   let questions = [];
   let currentIndex = 0;
   let score = 0;
@@ -359,8 +410,11 @@
   function buildQuestions() {
     const pool = shuffle(ANIMALS).slice(0, TOTAL_QUESTIONS);
     return pool.map((correct) => {
+      // 同じなかま（カテゴリ）から間違い選択肢を選ぶ→見分けにくくてむずかしい
+      const sameCategory = ANIMALS.filter((a) => a.cat === correct.cat && a.name !== correct.name);
       const others = ANIMALS.filter((a) => a.name !== correct.name);
-      const wrong = shuffle(others)[0];
+      const candidates = sameCategory.length > 0 ? sameCategory : others;
+      const wrong = shuffle(candidates)[0];
       const options = shuffle([correct, wrong]);
       return { correct, options };
     });
@@ -495,17 +549,18 @@
   function showResult() {
     showScreen(resultScreen);
     finalScoreEl.textContent = score;
-    const starCount = score >= 9 ? 3 : score >= 6 ? 2 : score >= 3 ? 1 : 0;
+    const ratio = score / TOTAL_QUESTIONS;
+    const starCount = ratio >= 0.9 ? 3 : ratio >= 0.6 ? 2 : ratio >= 0.3 ? 1 : 0;
     starsEl.textContent = "⭐".repeat(starCount) + "☆".repeat(3 - starCount);
 
     if (score === TOTAL_QUESTIONS) {
       resultEmojiEl.textContent = "🏆";
       resultMsgEl.textContent = "パーフェクト！ すごい どうぶつ はかせだね！";
       launchConfetti();
-    } else if (score >= 7) {
+    } else if (ratio >= 0.7) {
       resultEmojiEl.textContent = "🎉";
       resultMsgEl.textContent = "よくできました！ もう少しで はかせだよ！";
-    } else if (score >= 4) {
+    } else if (ratio >= 0.4) {
       resultEmojiEl.textContent = "😊";
       resultMsgEl.textContent = "がんばったね！ もう一回 ちょうせんしよう！";
     } else {
