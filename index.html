@@ -58,6 +58,55 @@
   #startBtn:active { transform: translateY(6px); box-shadow: 0 0 0 #d96e1f; }
   .sub { color: #a05a3f; font-size: 1.1rem; margin-top: 10px; text-align: center; }
 
+  /* ---- Category screen ---- */
+  .cat-title {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+    color: #ff6b8b;
+    margin: 36px 0 20px;
+    text-align: center;
+  }
+  .cat-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .cat-btn {
+    border: 4px solid #ffe0ea;
+    background: #fff;
+    border-radius: 20px;
+    padding: 18px 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+    transition: transform 0.12s;
+  }
+  .cat-btn:active { transform: scale(0.96); }
+  .cat-emoji { font-size: 2.6rem; }
+  .cat-label { font-size: 1.15rem; font-weight: bold; color: #555; }
+  .cat-count { font-size: 0.85rem; color: #aaa; }
+  #catGrid .cat-btn:first-child {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: center;
+    gap: 14px;
+    background: linear-gradient(180deg, #fff3d6, #ffe6b3);
+    border-color: #ffd27a;
+  }
+  .back-btn {
+    margin-top: 24px;
+    background: none;
+    border: none;
+    color: #a05a3f;
+    font-size: 1.05rem;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 8px 12px;
+  }
+
   /* ---- Loading screen ---- */
   #loading .spinner {
     width: 64px;
@@ -77,9 +126,25 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
     margin-top: 8px;
     margin-bottom: 4px;
   }
+  .home-btn {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: #fff;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  }
+  .home-btn:active { transform: scale(0.9); }
   .progress-wrap {
     flex: 1;
     height: 22px;
@@ -215,6 +280,17 @@
     margin-bottom: 60px;
   }
   #retryBtn:active { transform: translateY(6px); box-shadow: 0 0 0 #248f87; }
+  .result-btns { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .home-text-btn {
+    background: none;
+    border: none;
+    color: #a05a3f;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 8px 12px;
+    margin-bottom: 40px;
+  }
 
   .confetti {
     position: fixed;
@@ -236,7 +312,14 @@
     <h1>どうぶつクイズ</h1>
     <div class="title-emojis">🦁🐼🐘🦒🐧</div>
     <button id="startBtn">スタート！</button>
-    <p class="sub">ぜんぶで <span id="totalQTitle">10</span>もん<br>どうぶつを あてよう！</p>
+    <p class="sub">どうぶつを あてよう！</p>
+  </div>
+
+  <!-- カテゴリ選択画面 -->
+  <div id="category" class="screen">
+    <h2 class="cat-title">なにで あそぶ？</h2>
+    <div class="cat-grid" id="catGrid"></div>
+    <button id="catBackBtn" class="back-btn">← もどる</button>
   </div>
 
   <!-- よみこみ画面 -->
@@ -248,6 +331,7 @@
   <!-- クイズ画面 -->
   <div id="quiz" class="screen">
     <div class="top-bar">
+      <button id="homeBtn" class="home-btn" title="ホームに戻る">🏠</button>
       <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
       <div class="score-badge">⭐ <span id="scoreText">0</span></div>
     </div>
@@ -266,7 +350,10 @@
     <div class="result-score"><span id="finalScore">0</span> / <span id="totalQResult">10</span> もん せいかい</div>
     <div class="stars" id="stars"></div>
     <div class="result-msg" id="resultMsg"></div>
-    <button id="retryBtn">もういちど あそぶ</button>
+    <div class="result-btns">
+      <button id="retryBtn">もういちど あそぶ</button>
+      <button id="homeBtn2" class="home-text-btn">ホームに戻る</button>
+    </div>
   </div>
 
 </div>
@@ -280,8 +367,11 @@
   const ANIMALS = [
     // ほ乳類
     { name: "ライオン", query: "ライオン", emoji: "🦁", cat: "mammal" },
+    { name: "ホワイトライオン", query: "ホワイトライオン", emoji: "🦁", cat: "mammal" },
     { name: "トラ", query: "トラ", emoji: "🐯", cat: "mammal" },
+    { name: "ホワイトタイガー", query: "ホワイトタイガー", emoji: "🐯", cat: "mammal" },
     { name: "ヒョウ", query: "ヒョウ", emoji: "🐆", cat: "mammal" },
+    { name: "ジャガー", query: "ジャガー", emoji: "🐆", cat: "mammal" },
     { name: "チーター", query: "チーター", emoji: "🐆", cat: "mammal" },
     { name: "ゾウ", query: "アフリカゾウ", emoji: "🐘", cat: "mammal" },
     { name: "サイ", query: "サイ", emoji: "🦏", cat: "mammal" },
@@ -291,12 +381,19 @@
     { name: "ウマ", query: "ウマ", emoji: "🐴", cat: "mammal" },
     { name: "ロバ", query: "ロバ", emoji: "🫏", cat: "mammal" },
     { name: "ラクダ", query: "ヒトコブラクダ", emoji: "🐫", cat: "mammal" },
+    { name: "フタコブラクダ", query: "フタコブラクダ", emoji: "🐫", cat: "mammal" },
+    { name: "アルパカ", query: "アルパカ", emoji: "🦙", cat: "mammal" },
+    { name: "ラマ", query: "ラマ", emoji: "🦙", cat: "mammal" },
     { name: "パンダ", query: "ジャイアントパンダ", emoji: "🐼", cat: "mammal" },
     { name: "レッサーパンダ", query: "レッサーパンダ", emoji: "🐼", cat: "mammal" },
     { name: "コアラ", query: "コアラ", emoji: "🐨", cat: "mammal" },
     { name: "クマ", query: "ヒグマ", emoji: "🐻", cat: "mammal" },
+    { name: "ツキノワグマ", query: "ツキノワグマ", emoji: "🐻", cat: "mammal" },
+    { name: "ホッキョクグマ", query: "ホッキョクグマ", emoji: "🐻‍❄️", cat: "mammal" },
     { name: "オオカミ", query: "タイリクオオカミ", emoji: "🐺", cat: "mammal" },
+    { name: "コヨーテ", query: "コヨーテ", emoji: "🐺", cat: "mammal" },
     { name: "キツネ", query: "アカギツネ", emoji: "🦊", cat: "mammal" },
+    { name: "タヌキ", query: "タヌキ", emoji: "🦝", cat: "mammal" },
     { name: "イヌ", query: "イヌ", emoji: "🐶", cat: "mammal" },
     { name: "ネコ", query: "ネコ", emoji: "🐱", cat: "mammal" },
     { name: "ウサギ", query: "ウサギ", emoji: "🐰", cat: "mammal" },
@@ -313,14 +410,19 @@
     { name: "ヒツジ", query: "ヒツジ", emoji: "🐑", cat: "mammal" },
     { name: "ヤギ", query: "ヤギ", emoji: "🐐", cat: "mammal" },
     { name: "アザラシ", query: "アザラシ", emoji: "🦭", cat: "mammal" },
+    { name: "アシカ", query: "アシカ", emoji: "🦭", cat: "mammal" },
     { name: "セイウチ", query: "セイウチ", emoji: "🦭", cat: "mammal" },
     { name: "ラッコ", query: "ラッコ", emoji: "🦦", cat: "mammal" },
     { name: "イルカ", query: "マイルカ", emoji: "🐬", cat: "mammal" },
+    { name: "シャチ", query: "シャチ", emoji: "🐳", cat: "mammal" },
     { name: "クジラ", query: "クジラ", emoji: "🐳", cat: "mammal" },
     // 鳥類
     { name: "ペンギン", query: "ペンギン", emoji: "🐧", cat: "bird" },
+    { name: "コウテイペンギン", query: "コウテイペンギン", emoji: "🐧", cat: "bird" },
     { name: "フクロウ", query: "フクロウ", emoji: "🦉", cat: "bird" },
+    { name: "ミミズク", query: "ミミズク", emoji: "🦉", cat: "bird" },
     { name: "ワシ", query: "イヌワシ", emoji: "🦅", cat: "bird" },
+    { name: "ハクトウワシ", query: "ハクトウワシ", emoji: "🦅", cat: "bird" },
     { name: "タカ", query: "タカ", emoji: "🦅", cat: "bird" },
     { name: "クジャク", query: "クジャク", emoji: "🦚", cat: "bird" },
     { name: "フラミンゴ", query: "フラミンゴ", emoji: "🦩", cat: "bird" },
@@ -347,8 +449,10 @@
     { name: "タツノオトシゴ", query: "タツノオトシゴ", emoji: "🐴", cat: "sea" },
     { name: "ウナギ", query: "ウナギ", emoji: "🐍", cat: "sea" },
     { name: "カメ", query: "ウミガメ", emoji: "🐢", cat: "reptile" },
+    { name: "リクガメ", query: "リクガメ", emoji: "🐢", cat: "reptile" },
     // は虫類
     { name: "ワニ", query: "ワニ", emoji: "🐊", cat: "reptile" },
+    { name: "アリゲーター", query: "アリゲーター", emoji: "🐊", cat: "reptile" },
     { name: "ヘビ", query: "ヘビ", emoji: "🐍", cat: "reptile" },
     { name: "トカゲ", query: "トカゲ", emoji: "🦎", cat: "reptile" },
     { name: "イグアナ", query: "イグアナ", emoji: "🦎", cat: "reptile" },
@@ -359,9 +463,12 @@
     { name: "サンショウウオ", query: "サンショウウオ", emoji: "🦎", cat: "amphibian" },
     // 昆虫など
     { name: "チョウ", query: "チョウ", emoji: "🦋", cat: "insect" },
+    { name: "ガ", query: "ガ", emoji: "🦋", cat: "insect" },
     { name: "ミツバチ", query: "セイヨウミツバチ", emoji: "🐝", cat: "insect" },
+    { name: "スズメバチ", query: "スズメバチ", emoji: "🐝", cat: "insect" },
     { name: "テントウムシ", query: "テントウムシ", emoji: "🐞", cat: "insect" },
     { name: "アリ", query: "アリ", emoji: "🐜", cat: "insect" },
+    { name: "シロアリ", query: "シロアリ", emoji: "🐜", cat: "insect" },
     { name: "トンボ", query: "トンボ", emoji: "🐉", cat: "insect" },
     { name: "セミ", query: "セミ", emoji: "🦗", cat: "insect" },
     { name: "カブトムシ", query: "カブトムシ", emoji: "🪲", cat: "insect" },
@@ -370,14 +477,28 @@
     { name: "カタツムリ", query: "カタツムリ", emoji: "🐌", cat: "insect" }
   ];
 
-  const TOTAL_QUESTIONS = 15;
+  const MAX_QUESTIONS = 15;
   const imageCache = {};
 
+  // カテゴリの表示情報
+  const CATEGORIES = [
+    { key: "all", label: "すべて", emoji: "🐾" },
+    { key: "mammal", label: "ほ乳類", emoji: "🦁" },
+    { key: "bird", label: "鳥", emoji: "🦉" },
+    { key: "sea", label: "魚・海の生き物", emoji: "🐠" },
+    { key: "reptile", label: "は虫類", emoji: "🐊" },
+    { key: "amphibian", label: "両生類", emoji: "🐸" },
+    { key: "insect", label: "虫", emoji: "🐝" }
+  ];
+
   const titleScreen = document.getElementById("title");
+  const categoryScreen = document.getElementById("category");
   const loadingScreen = document.getElementById("loading");
   const quizScreen = document.getElementById("quiz");
   const resultScreen = document.getElementById("result");
   const startBtn = document.getElementById("startBtn");
+  const catGrid = document.getElementById("catGrid");
+  const catBackBtn = document.getElementById("catBackBtn");
   const retryBtn = document.getElementById("retryBtn");
   const progressBar = document.getElementById("progressBar");
   const scoreText = document.getElementById("scoreText");
@@ -390,13 +511,21 @@
   const resultMsgEl = document.getElementById("resultMsg");
   const resultEmojiEl = document.getElementById("resultEmoji");
 
-  [document.getElementById("totalQTitle"), document.getElementById("totalQ"), document.getElementById("totalQResult")]
-    .forEach((el) => { if (el) el.textContent = TOTAL_QUESTIONS; });
-
   let questions = [];
   let currentIndex = 0;
   let score = 0;
   let locked = false;
+  let currentTotal = MAX_QUESTIONS;
+
+  // カテゴリボタンを生成（各カテゴリの動物数も表示）
+  CATEGORIES.forEach((cat) => {
+    const count = cat.key === "all" ? ANIMALS.length : ANIMALS.filter((a) => a.cat === cat.key).length;
+    const btn = document.createElement("button");
+    btn.className = "cat-btn";
+    btn.innerHTML = `<span class="cat-emoji">${cat.emoji}</span><span class="cat-label">${cat.label}</span><span class="cat-count">${count}しゅるい</span>`;
+    btn.addEventListener("click", () => startGame(cat.key));
+    catGrid.appendChild(btn);
+  });
 
   function shuffle(arr) {
     const a = arr.slice();
@@ -407,8 +536,10 @@
     return a;
   }
 
-  function buildQuestions() {
-    const pool = shuffle(ANIMALS).slice(0, TOTAL_QUESTIONS);
+  function buildQuestions(categoryKey) {
+    const basePool = categoryKey === "all" ? ANIMALS : ANIMALS.filter((a) => a.cat === categoryKey);
+    currentTotal = Math.min(MAX_QUESTIONS, basePool.length);
+    const pool = shuffle(basePool).slice(0, currentTotal);
     return pool.map((correct) => {
       // 同じなかま（カテゴリ）から間違い選択肢を選ぶ→見分けにくくてむずかしい
       const sameCategory = ANIMALS.filter((a) => a.cat === correct.cat && a.name !== correct.name);
@@ -450,16 +581,18 @@
   }
 
   function showScreen(el) {
-    [titleScreen, loadingScreen, quizScreen, resultScreen].forEach((s) => s.classList.remove("active"));
+    [titleScreen, categoryScreen, loadingScreen, quizScreen, resultScreen].forEach((s) => s.classList.remove("active"));
     el.classList.add("active");
   }
 
-  async function startGame() {
+  async function startGame(categoryKey) {
     showScreen(loadingScreen);
-    questions = buildQuestions();
+    questions = buildQuestions(categoryKey);
     currentIndex = 0;
     score = 0;
     scoreText.textContent = "0";
+    document.getElementById("totalQ").textContent = currentTotal;
+    document.getElementById("totalQResult").textContent = currentTotal;
 
     // 必要な動物の画像を先読み（並列取得、失敗しても続行）
     const neededQueries = new Set();
@@ -477,7 +610,7 @@
     const q = questions[currentIndex];
     qIndexEl.textContent = currentIndex + 1;
     qAnimalName.textContent = q.correct.name;
-    progressBar.style.width = ((currentIndex) / TOTAL_QUESTIONS * 100) + "%";
+    progressBar.style.width = ((currentIndex) / currentTotal * 100) + "%";
 
     choicesEl.innerHTML = "";
     q.options.forEach((opt) => {
@@ -501,8 +634,10 @@
 
       const nameEl = document.createElement("span");
       nameEl.className = "choice-name";
-      nameEl.textContent = opt.name;
+      nameEl.textContent = "？";
+      nameEl.dataset.name = opt.name;
 
+      btn.dataset.name = opt.name;
       btn.appendChild(mediaWrap);
       btn.appendChild(nameEl);
       btn.addEventListener("click", () => onChoose(btn, opt, q.correct));
@@ -515,7 +650,10 @@
     locked = true;
     const isCorrect = chosen.name === correct.name;
     const allButtons = choicesEl.querySelectorAll(".choice-btn");
-    allButtons.forEach((b) => b.classList.add("disabled"));
+    allButtons.forEach((b) => {
+      b.classList.add("disabled");
+      b.querySelector(".choice-name").textContent = b.dataset.name;
+    });
 
     if (isCorrect) {
       btn.classList.add("correct");
@@ -526,7 +664,7 @@
     } else {
       btn.classList.add("wrong");
       allButtons.forEach((b) => {
-        if (b.querySelector(".choice-name").textContent === correct.name) {
+        if (b.dataset.name === correct.name) {
           b.classList.add("correct");
         }
       });
@@ -534,11 +672,11 @@
       feedbackEl.classList.add("wrong");
     }
 
-    progressBar.style.width = ((currentIndex + 1) / TOTAL_QUESTIONS * 100) + "%";
+    progressBar.style.width = ((currentIndex + 1) / currentTotal * 100) + "%";
 
     setTimeout(() => {
       currentIndex++;
-      if (currentIndex >= TOTAL_QUESTIONS) {
+      if (currentIndex >= currentTotal) {
         showResult();
       } else {
         renderQuestion();
@@ -549,11 +687,11 @@
   function showResult() {
     showScreen(resultScreen);
     finalScoreEl.textContent = score;
-    const ratio = score / TOTAL_QUESTIONS;
+    const ratio = score / currentTotal;
     const starCount = ratio >= 0.9 ? 3 : ratio >= 0.6 ? 2 : ratio >= 0.3 ? 1 : 0;
     starsEl.textContent = "⭐".repeat(starCount) + "☆".repeat(3 - starCount);
 
-    if (score === TOTAL_QUESTIONS) {
+    if (score === currentTotal) {
       resultEmojiEl.textContent = "🏆";
       resultMsgEl.textContent = "パーフェクト！ すごい どうぶつ はかせだね！";
       launchConfetti();
@@ -582,8 +720,11 @@
     }
   }
 
-  startBtn.addEventListener("click", startGame);
-  retryBtn.addEventListener("click", startGame);
+  startBtn.addEventListener("click", () => showScreen(categoryScreen));
+  catBackBtn.addEventListener("click", () => showScreen(titleScreen));
+  retryBtn.addEventListener("click", () => showScreen(categoryScreen));
+  document.getElementById("homeBtn").addEventListener("click", () => showScreen(titleScreen));
+  document.getElementById("homeBtn2").addEventListener("click", () => showScreen(titleScreen));
 })();
 </script>
 </body>
